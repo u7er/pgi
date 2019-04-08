@@ -95,7 +95,7 @@ int main() {
 
 		if (n == 0) return -22;
 
-		int min = 100000;
+		int min = (1 << 32) - 1;
 		int index = 0;
 		for (int k = 0; k < 16; k++){
 			int Delta = (palitra[buffer[0]][0] - Bmp16Palette[k].Red) * (palitra[buffer[0]][0] - Bmp16Palette[k].Red)
