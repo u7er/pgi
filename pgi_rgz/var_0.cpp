@@ -25,102 +25,99 @@ struct  head {
 	long  biy;
 	long  biclrused;
 	long  biclrimp;
-} head_file;
+} BmpHeader;
 
-typedef struct TPaletteStruct
-{
+struct PaletteStruct {
 	int Red;
 	int Green;
 	int Blue;
-} TPalette;
+} Palette;
 
-TPalette BMPPalette16[256];
+Palette Bmp16Palette[256];
 
 unsigned char palitra[256][4];
 
 int main() {
-	FILE *f1, *f2;
+	FILE *bmp256s, *bmp16d;
 	int n;
 	int buffer[1024];
 
-	f1 = fopen("_Carib256.bmp", "rb");
+	bmp256s = fopen("_Carib256.bmp", "rb");
 
-	n = fread(&head_file, sizeof(head_file), 1, f1);
+	n = fread(&BmpHeader, sizeof(BmpHeader), 1, bmp256s);
 
 	resize(1024, 768);
 
-	for (int i = 0; i < (head_file.bfoffbits - sizeof(head_file)) / 4; i++) {
-		n = fread(palitra[i], 4, 1, f1);
+	for (int i = 0; i < (BmpHeader.bfoffbits - sizeof(BmpHeader)) / 4; i++) {
+		n = fread(palitra[i], 4, 1, bmp256s);
 	}
 
-	BMPPalette16[0].Red = palitra[0][0];
-	BMPPalette16[0].Green = palitra[0][1];
-	BMPPalette16[0].Blue = palitra[0][2];
+	Bmp16Palette[0].Red = palitra[0][0];
+	Bmp16Palette[0].Green = palitra[0][1];
+	Bmp16Palette[0].Blue = palitra[0][2];
 
-	int count_palette = 1;
+	int paletteCount = 1;
 
-	for (int j = 0; j < 256; j++)
-	{
-		for (int k = 0; k < count_palette; k++)
-		{
-			int Delta = (palitra[j][0] - BMPPalette16[k].Red) * (palitra[0][0] - BMPPalette16[k].Red)
-				+ (palitra[j][1] - BMPPalette16[k].Green) * (palitra[j][1] - BMPPalette16[k].Green)
-				+ (palitra[j][2] - BMPPalette16[k].Blue) * (palitra[j][2] - BMPPalette16[k].Blue);
+	for (int j = 0; j < 256; j++){
+		for (int k = 0; k < paletteCount; k++){
+			int Delta = (palitra[j][0] - Bmp16Palette[k].Red) * (palitra[0][0] - Bmp16Palette[k].Red)
+				+ (palitra[j][1] - Bmp16Palette[k].Green) * (palitra[j][1] - Bmp16Palette[k].Green)
+				+ (palitra[j][2] - Bmp16Palette[k].Blue) * (palitra[j][2] - Bmp16Palette[k].Blue);
 
 			if (Delta < 1600)
 				break;
 
-			if (k == count_palette - 1)
-			{
-				BMPPalette16[count_palette].Red = palitra[j][0];
-				BMPPalette16[count_palette].Green = palitra[j][1];
-				BMPPalette16[count_palette].Blue = palitra[j][2];
-				count_palette++;
+			if (k == paletteCount - 1){
+				Bmp16Palette[paletteCount].Red = palitra[j][0];
+				Bmp16Palette[paletteCount].Green = palitra[j][1];
+				Bmp16Palette[paletteCount].Blue = palitra[j][2];
+				paletteCount++;
 			}
 		}
-		if (count_palette == 16)
+		if (paletteCount == 16)
 			break;
 	}
 
-	cout << "New size pallete BMP16: " << count_palette << endl << "Palette:" << endl;
+	cout << "Size of palette for BMP 16-bit: " << paletteCount 
+		<< endl << "Palette array:" << endl;
 
-	for (int i = 0; i < count_palette; i++)
-	{
-		cout << i << ") " << BMPPalette16[i].Red << " " << BMPPalette16[i].Green << " " << BMPPalette16[i].Blue << endl;
+	for (int i = 0; i < paletteCount; i++){
+		cout << Bmp16Palette[i].Red << " " 
+			<< Bmp16Palette[i].Green << " " 
+			<< Bmp16Palette[i].Blue << endl;
 	}
 
-	int y = head_file.biheight;
+	int y = BmpHeader.biheight;
 	int x = 0;
 
 	do {
-		n = fread(buffer, 1, 1, f1);
+		n = fread(buffer, 1, 1, bmp256s);
+
+		if (n == 0) return -22;
 
 		int min = 100000;
 		int index = 0;
-		for (int k = 0; k < 16; k++)
-		{
-			int Delta = (palitra[buffer[0]][0] - BMPPalette16[k].Red) * (palitra[buffer[0]][0] - BMPPalette16[k].Red)
-				+ (palitra[buffer[0]][1] - BMPPalette16[k].Green) * (palitra[buffer[0]][1] - BMPPalette16[k].Green)
-				+ (palitra[buffer[0]][2] - BMPPalette16[k].Blue) * (palitra[buffer[0]][2] - BMPPalette16[k].Blue);
+		for (int k = 0; k < 16; k++){
+			int Delta = (palitra[buffer[0]][0] - Bmp16Palette[k].Red) * (palitra[buffer[0]][0] - Bmp16Palette[k].Red)
+				+ (palitra[buffer[0]][1] - Bmp16Palette[k].Green) * (palitra[buffer[0]][1] - Bmp16Palette[k].Green)
+				+ (palitra[buffer[0]][2] - Bmp16Palette[k].Blue) * (palitra[buffer[0]][2] - Bmp16Palette[k].Blue);
 
-			if (Delta < min)
-			{
+			if (Delta < min){
 				min = Delta;
 				index = k;
 			}
 		}
 
-		putpixel(x, y, RGB(BMPPalette16[index].Blue, BMPPalette16[index].Green, BMPPalette16[index].Red));
+		putpixel(x, y, RGB(Bmp16Palette[index].Blue, Bmp16Palette[index].Green, Bmp16Palette[index].Red));
 
 		x++;
-		if (x == head_file.biwidth)
-		{
+		if (x == BmpHeader.biwidth){
 			x = 0;
 			y--;
 		}
 
 	} while (n != 0);
 
-	fclose(f1);
+	fclose(bmp256s);
 
 }
